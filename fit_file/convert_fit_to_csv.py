@@ -1,3 +1,8 @@
+import os
+import numpy as np
+import pandas as pd
+import xml.etree.ElementTree as ET
+
 #defining parse function for generating a heart rate vs distance log
 def parsing_file(filepath):
     ns = {'tcx': 'http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2'}
