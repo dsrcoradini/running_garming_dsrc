@@ -1,8 +1,6 @@
 import pandas as pd
 import numpy as np
 from fitparse import FitFile
-import sys
-import os
 import xml.etree.ElementTree as ET
 
 # ---------------------------------------------------------
@@ -141,12 +139,8 @@ def add_pace_metrics(df):
     return df
 
 ##Bounding boxes
-# Add parent folder to Python path
-sys.path.append(r"C:\Users\diego\project1")
-sys.path.append(r"C:\Users\diego\project1\functions")
-
-from coordinates import bounding_boxes
-from functions import load_fit_to_df   # <-- use FIT loader!
+# Import bounding boxes from local module
+from functions.coordinates import bounding_boxes
 
 
 # ---------------------------------------------------------

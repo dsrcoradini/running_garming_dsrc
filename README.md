@@ -22,10 +22,8 @@ source .venv/bin/activate  # Linux/macOS
 # .venv\Scripts\activate  # Windows
 
 pip install -r requirements.txt
-```
 
-For Garmin Connect downloads:
-```bash
+# For Garmin Connect downloads (optional)
 pip install garminconnect
 ```
 

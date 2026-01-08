@@ -1,13 +1,9 @@
 import plotly.express as px
 import os
-import sys
 import numpy as np
 import pandas as pd
 
-# Add parent folder to Python path
-sys.path.append(r"C:\Users\diego\project1")
-
-from coordinates import bounding_boxes  # bounding box definitions
+from functions.coordinates import bounding_boxes  # bounding box definitions
 
 # ---------------------------------------------------------
 # Bounding box expansion
@@ -42,16 +38,13 @@ def expand_bbox_with_tolerance(df, bbox, tol_lat=0.01, tol_lon=0.01):
 
 
 # ---------------------------------------------------------
-# Apply bounding box for Leoben
+# Example usage (commented out - requires df_all to be passed)
 # ---------------------------------------------------------
-bbox_leoben = bounding_boxes["Austria"]["Leoben"]
-
-bbox_expanded = expand_bbox_with_tolerance(
-    df_all, bbox_leoben, tol_lat=0.01, tol_lon=0.01
-)
-
-# Filter data inside bounding box
-df_selected = df_all[
-    df_all["latitude"].between(bbox_expanded["lat_min"], bbox_expanded["lat_max"])
-    & df_all["longitude"].between(bbox_expanded["lon_min"], bbox_expanded["lon_max"])
-]
+# bbox_leoben = bounding_boxes["Austria"]["Leoben"]
+# bbox_expanded = expand_bbox_with_tolerance(
+#     df_all, bbox_leoben, tol_lat=0.01, tol_lon=0.01
+# )
+# df_selected = df_all[
+#     df_all["latitude"].between(bbox_expanded["lat_min"], bbox_expanded["lat_max"])
+#     & df_all["longitude"].between(bbox_expanded["lon_min"], bbox_expanded["lon_max"])
+# ]
