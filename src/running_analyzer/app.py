@@ -1,17 +1,21 @@
 """
-Refactored dash_board.py
+Main Dash application for running data visualization.
 
-- Uses environment variable RUN_FIT_FOLDER or relative 'fit_folder'
-- Uses logging instead of prints
-- Provides load_all_runs() to isolate IO and parsing
-- Provides create_app(runs) factory to produce the Dash app
-- Keeps the same UI and callbacks as before but with improved structure
+Provides interactive dashboard with:
+- HRV, pace, cadence, elevation metrics
+- Running dynamics (ground contact time, vertical oscillation, power)
+- Geographic filtering by city
+- Map visualization of routes
 """
 
 import os
+import sys
 import logging
 from pathlib import Path
 from typing import List, Dict, Optional
+
+# Add src to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 import pandas as pd
@@ -20,27 +24,24 @@ from dash import dcc, html
 from dash.dependencies import Input, Output
 import plotly.express as px
 
-# Project functions (ensure 'functions' package or folder with __init__ exists)
-from functions import (
-    add_hrv_metrics,
-    add_pace_metrics,
-    compute_run_stats,
-    filter_runs_by_city,
-    bounding_boxes,
-    parse_tcx,
-)
+# Project imports
+from running_analyzer.parsers import parse_tcx
+from running_analyzer.metrics import add_hrv_metrics, add_pace_metrics, compute_run_stats
+from running_analyzer.geo import bounding_boxes, filter_runs_by_city
+from running_analyzer.utils import format_run_name, format_pace, format_distance
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configurable fit folder via environment variable or default to repository's fit_folder
-FIT_FOLDER = Path(os.environ.get("RUN_FIT_FOLDER", Path(__file__).parent / "fit_folder"))
+# Configurable fit folder via environment variable
+DEFAULT_DATA_FOLDER = Path(__file__).parent.parent.parent / "data" / "fit_files"
+FIT_FOLDER = Path(os.environ.get("RUN_FIT_FOLDER", DEFAULT_DATA_FOLDER))
 
 
 def load_all_runs(fit_folder: Path) -> List[Dict[str, object]]:
     """
-    Load all .fit (or .tcx) files from the fit_folder using parse_tcx().
+    Load all .fit (or .tcx) files from the fit_folder.
     Returns a list of dicts: {"name": run_name, "df": dataframe}.
     """
     runs: List[Dict[str, object]] = []
@@ -63,20 +64,23 @@ def load_all_runs(fit_folder: Path) -> List[Dict[str, object]]:
                 continue
 
             df = df.copy()
-            df["run_name"] = file_path.stem
+            # Format run name to be more readable
+            readable_name = format_run_name(file_path.stem)
+            df["run_name"] = readable_name
             # safe parse timestamp
             if "timestamp" in df.columns:
                 df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
             else:
                 df["timestamp"] = pd.NaT
 
-            runs.append({"name": df["run_name"].iloc[0], "df": df})
+            runs.append({"name": readable_name, "df": df})
 
     logger.info("Loaded %d runs", len(runs))
     return runs
 
 
 def empty_map_fig():
+    """Return empty map figure."""
     return {
         "data": [],
         "layout": {
@@ -87,6 +91,7 @@ def empty_map_fig():
 
 
 def empty_line_fig(title: str = "No data available"):
+    """Return empty line figure with title."""
     return {
         "data": [],
         "layout": {"title": title},
@@ -94,6 +99,7 @@ def empty_line_fig(title: str = "No data available"):
 
 
 def create_layout(runs: List[Dict[str, object]]):
+    """Create Dash application layout."""
     return html.Div(
         [
             html.H1("Interactive Run Explorer (FIT + Running Dynamics)"),
@@ -160,6 +166,7 @@ def create_layout(runs: List[Dict[str, object]]):
 
 
 def create_app(runs: List[Dict[str, object]]):
+    """Create and configure Dash app."""
     app = dash.Dash(__name__)
     app.layout = create_layout(runs)
 
@@ -236,13 +243,9 @@ def create_app(runs: List[Dict[str, object]]):
                 html.Div(
                     [
                         html.H4(r["name"]),
-                        html.P(f"Distance: {stats.get('distance_km', float('nan')):.2f} km"),
-                        html.P(f"Avg HR: {stats.get('avg_hr', float('nan')):.1f} bpm"),
-                        html.P(
-                            f"Pace: {stats.get('avg_pace', float('nan')) / 60:.2f} min/km"
-                            if not np.isnan(stats.get("avg_pace", float("nan")))
-                            else "Pace: n/a"
-                        ),
+                        html.P(f"Distance: {format_distance(stats.get('distance_km', 0) * 1000)}"),
+                        html.P(f"Avg HR: {stats.get('avg_hr', 0):.1f} bpm"),
+                        html.P(f"Pace: {format_pace(stats.get('avg_pace', 0))}"),
                     ],
                     style={"padding": "10px", "border": "1px solid #ccc", "margin": "5px", "width": "220px"},
                 )
@@ -308,8 +311,15 @@ def create_app(runs: List[Dict[str, object]]):
     return app
 
 
-if __name__ == "__main__":
+def main():
+    """Main entry point."""
+    # Get debug mode from environment
+    debug_mode = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
+    
     runs = load_all_runs(FIT_FOLDER)
     app = create_app(runs)
-    # debug=True is convenient for development, set to False in production
-    app.run(debug=True)
+    app.run(debug=debug_mode)
+
+
+if __name__ == "__main__":
+    main()

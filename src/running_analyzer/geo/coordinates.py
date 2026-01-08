@@ -1,4 +1,6 @@
-# bounding_boxes.py
+"""
+Bounding boxes coordinates for cities.
+"""
 
 bounding_boxes = {
     "Brazil": {

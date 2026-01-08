@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment variables
+.env
+.env.local
+
+# Data files (user data - keep private)
+data/fit_files/*.fit
+data/fit_files/*.tcx
+
+# Keep directory structure
+!data/fit_files/.gitkeep
+
+# Logs
+*.log
+
+# Cache
+.cache/
+
+# pytest
+.pytest_cache/
