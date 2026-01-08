@@ -1,92 +1,129 @@
+#!/usr/bin/env python3
 """
-Script to download FIT files from Garmin Connect API.
+CLI script to download FIT files from Garmin Connect.
+
+Usage:
+    python scripts/download_garmin.py
+    
+Environment variables:
+    GARMIN_EMAIL: Garmin Connect email
+    GARMIN_PASSWORD: Garmin Connect password
+    RUN_FIT_FOLDER: Output directory (default: data/fit_files)
 """
 
 import os
 import sys
+import logging
 from pathlib import Path
 from getpass import getpass
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from garminconnect import Garmin, GarminConnectAuthenticationError
+from running_analyzer.downloader import GarminDownloader
 
-# Configuration
-EMAIL = os.getenv("GARMIN_EMAIL") or input("Enter Garmin email: ")
-PASSWORD = os.getenv("GARMIN_PASSWORD") or getpass("Enter Garmin password: ")
-
-# Default to data/fit_files
-FIT_DIR = Path(__file__).parent.parent / "data" / "fit_files"
-FIT_DIR.mkdir(parents=True, exist_ok=True)
-
-# Authenticate
-try:
-    api = Garmin(EMAIL, PASSWORD)
-    api.login()
-    print("✅ Logged in to Garmin Connect.")
-except GarminConnectAuthenticationError:
-    print("❌ Authentication failed. Check your credentials.")
-    sys.exit(1)
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
-def batch_download_fit_files(activity_type: str, limit: int = 20):
-    """Download FIT files for activities of a specific type."""
-    print(f"\n🔍 Searching for '{activity_type}' activities (limit {limit})...")
-    try:
-        activities = api.get_activities(0, limit)
-        matched = [act for act in activities if act["activityType"]["typeKey"].lower() == activity_type.lower()]
-        if not matched:
-            print("⚠️ No matching activities found.")
-            return
-
-        # Show selected activities
-        print("\n📋 Selected Activities:")
-        for i, act in enumerate(matched, 1):
-            act_id = act["activityId"]
-            act_type = act["activityType"]["typeKey"]
-            act_date = act["startTimeLocal"]
-            act_name = act.get("activityName", "Unnamed")
-            distance = round(act.get("distance", 0) / 1000, 2)
-            duration = round(act.get("duration", 0) / 60, 1)
-            print(f"{i:2}. ID: {act_id} | Type: {act_type} | Date: {act_date} | Name: {act_name} | {distance} km in {duration} min")
-
-        print(f"\n📦 Found {len(matched)} matching activities. Starting FIT download...")
-        for act in matched:
-            activity_id = act["activityId"]
-            start_time = act["startTimeLocal"].replace(":", "-").replace(" ", "_")
-            fit_filename = FIT_DIR / f"{activity_type}_{start_time}_{activity_id}.fit"
-
-            try:
-                fit_data = api.download_activity(activity_id)
-                with open(fit_filename, "wb") as f:
-                    f.write(fit_data)
-                print(f"✅ FIT saved: {fit_filename.name}")
-            except Exception as e:
-                print(f"❌ Failed to download activity {activity_id}: {e}")
-    except Exception as e:
-        print(f"❌ Error fetching activities: {e}")
+def get_credentials():
+    """Get Garmin credentials from environment or user input."""
+    email = os.getenv("GARMIN_EMAIL")
+    password = os.getenv("GARMIN_PASSWORD")
+    
+    if not email:
+        email = input("Enter Garmin email: ").strip()
+    
+    if not password:
+        password = getpass("Enter Garmin password: ")
+    
+    return email, password
 
 
-def main_menu():
-    """Interactive main menu."""
+def get_output_directory():
+    """Get output directory from environment or use default."""
+    default_dir = Path(__file__).parent.parent / "data" / "fit_files"
+    output_dir = Path(os.getenv("RUN_FIT_FOLDER", default_dir))
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return output_dir
+
+
+def interactive_menu():
+    """Interactive menu for downloading activities."""
+    logger.info("=" * 60)
+    logger.info("🚴 Garmin Connect FIT Downloader")
+    logger.info("=" * 60)
+    
+    # Get credentials
+    email, password = get_credentials()
+    output_dir = get_output_directory()
+    
+    logger.info(f"\n📁 Output directory: {output_dir}")
+    
+    # Initialize downloader
+    downloader = GarminDownloader(email, password, output_dir)
+    
+    if not downloader.authenticate():
+        logger.error("\n❌ Authentication failed. Exiting.")
+        return 1
+    
+    # Main loop
     while True:
-        print("\n🚴 Garmin FIT Downloader")
-        print("1. Download FIT files by activity type")
-        print("q. Quit")
-        choice = input("Select an option: ").strip().lower()
-
+        logger.info("\n" + "=" * 60)
+        logger.info("OPTIONS:")
+        logger.info("  1. Download activities by type")
+        logger.info("  2. Download recent activities (all types)")
+        logger.info("  3. Change output directory")
+        logger.info("  q. Quit")
+        logger.info("=" * 60)
+        
+        choice = input("\nSelect an option: ").strip().lower()
+        
         if choice == "1":
-            activity_type = input("Enter activity type (e.g., running, cycling, hiking): ").strip()
-            limit = input("How many recent activities to check? (default 20): ").strip()
-            limit = int(limit) if limit.isdigit() else 20
-            batch_download_fit_files(activity_type, limit)
+            activity_type = input("\nEnter activity type (e.g., running, cycling, hiking): ").strip()
+            limit_str = input("How many recent activities? (default 20): ").strip()
+            limit = int(limit_str) if limit_str.isdigit() else 20
+            
+            downloader.download_activities_batch(activity_type, limit)
+            
+        elif choice == "2":
+            limit_str = input("\nHow many recent activities? (default 20): ").strip()
+            limit = int(limit_str) if limit_str.isdigit() else 20
+            
+            downloader.download_activities_batch(activity_type=None, limit=limit)
+            
+        elif choice == "3":
+            new_dir = input("\nEnter new output directory: ").strip()
+            output_dir = Path(new_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            downloader.output_dir = output_dir
+            logger.info(f"✅ Output directory changed to: {output_dir}")
+            
         elif choice == "q":
-            print("👋 Goodbye!")
+            logger.info("\n👋 Goodbye!")
             break
+            
         else:
-            print("❌ Invalid choice. Try again.")
+            logger.warning("❌ Invalid choice. Try again.")
+    
+    return 0
+
+
+def main():
+    """Main entry point."""
+    try:
+        sys.exit(interactive_menu())
+    except KeyboardInterrupt:
+        logger.info("\n\n👋 Interrupted by user. Goodbye!")
+        sys.exit(0)
+    except Exception as e:
+        logger.error(f"\n❌ Unexpected error: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    main_menu()
+    main()

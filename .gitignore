@@ -30,15 +30,18 @@ env/
 .env
 .env.local
 
-# FIT files (user data)
-fit_folder/*.fit
-fit_folder/*.tcx
+# Data files (user data - keep private)
+data/fit_files/*.fit
+data/fit_files/*.tcx
 
-# Keep the folder structure
-!fit_folder/.gitkeep
+# Keep directory structure
+!data/fit_files/.gitkeep
 
 # Logs
 *.log
 
 # Cache
 .cache/
+
+# pytest
+.pytest_cache/

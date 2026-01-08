@@ -37,16 +37,31 @@ pip install -e .
 
 ### 1. Prepare Data
 
-**Option A: Download from Garmin Connect**
+**Option A: Download from Garmin Connect (Interactive)**
 ```bash
+# Interactive menu
 python scripts/download_garmin.py
-# Or use environment variables:
+
+# Or with environment variables (no prompts)
 export GARMIN_EMAIL="your_email@example.com"
 export GARMIN_PASSWORD="your_password"
 python scripts/download_garmin.py
 ```
 
-**Option B: Manual Upload**
+**Option B: Programmatic Download**
+```python
+from running_analyzer.downloader import download_activities
+
+count = download_activities(
+    email="your_email@example.com",
+    password="your_password",
+    output_dir="data/fit_files",
+    activity_type="running",
+    limit=20
+)
+```
+
+**Option C: Manual Upload**
 Place FIT/TCX files in `data/fit_files/` directory
 
 ### 2. Run Dashboard
@@ -91,13 +106,20 @@ running_garming_dsrc/
 │       │   ├── __init__.py
 │       │   ├── coordinates.py
 │       │   └── filters.py
+│       ├── downloader/            # Garmin Connect API
+│       │   ├── __init__.py
+│       │   └── garmin_client.py
 │       └── utils/                 # Helper functions
 │           ├── __init__.py
 │           └── helpers.py
-├── scripts/
-│   └── download_garmin.py         # Garmin Connect downloader
+├── scripts/                       # CLI scripts
+│   ├── __init__.py
+│   ├── download_garmin.py         # Download CLI
+│   └── README.md                  # Scripts documentation
 ├── data/
 │   └── fit_files/                 # FIT/TCX data files
+├── examples/                      # Usage examples
+│   └── download_example.py
 ├── tests/                         # Unit tests
 │   ├── __init__.py
 │   └── test_helpers.py
