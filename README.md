@@ -1,34 +1,54 @@
-This project is a data analysis test. It consists of three main components: the API, the CSV converter, and the analyser.
 
-**API – api_call_fit_file**  
-Located in the project1 root folder.  
-This script retrieves FIT data from Garmin and downloads it to your computer or repository.  
-You must provide your email and password, but credentials are not stored.  
-The API supports downloading up to 1000 activities. A potential improvement would be to define a date window for more precise filtering.
+Short purpose
+- A personal project to visualize Garmin/FIT (or TCX) running data as an interactive Dash app.
 
-**dash_board**  
-Data Pipeline: All processing now happens directly from the TCX files.
-There is no need to convert anything to CSV anymore — the dashboard loads, parses, and analyzes the raw TCX data on the fly.
-Although the files carry a .fit extension, they are actually TCX XML files, so FIT parsing libraries are not required.
+What's in the repo
+- `dash_board.py` — the Dash app.
+- `api_call_fit_file.py` — helper functions for FIT/TCX handling (see files).
+- `version_packages.txt` — currently listed package versions.
+- Folders: `fit_folder`, `map_data`, `functions` (placeholders / helper functions expected).
 
-Metrics & Device Considerations: Some metrics (e.g., power, ground contact time, vertical oscillation) are not present in TCX files and would require true FIT files or a device that records these fields.
-Cadence, elevation, and temperature may be available depending on the device model.
-Garmin Forerunner 255 uses Smart Recording, meaning data points are captured only when movement changes significantly.
-This results in irregular sampling intervals, which affects smoothing, pace calculations, and dynamic plots.
+Quickstart (recommended)
+1. Clone the repo:
+   ```
+   git clone https://github.com/dsrcoradini/running_garming_dsrc.git
+   cd running_garming_dsrc
+   ```
 
-Data Quality: Data cleaning is still necessary. Outliers in heart rate, GPS, or distance can distort HRV, pace, and other derived metrics. A robust cleaning pipeline (filters, smoothing, interpolation) will be needed.
+2. Python environment:
+   - Python 3.9+ recommended (check your dependencies).
+   - Create a virtual environment:
+     ```
+     python -m venv .venv
+     source .venv/bin/activate   # Linux / macOS
+     .venv\Scripts\activate      # Windows
+     ```
 
-Current Limitations
-- City selection: The geographic filtering works only for some files.
-Likely due to bounding box mismatches or missing GPS points in certain TCX files.
-- Dynamic diagrams: Multi‑run comparison plots need refinement, especially with irregular sampling.
-- Advanced metrics:
-- VO₂max estimation is not implemented yet.
-- Fitness age calculation is pending.
-- Running dynamics (GCT, VO, power) require real FIT files.
-Next Steps
-- Improve TCX parsing to support more optional fields (cadence, elevation, temperature).
-- Add a data‑cleaning module (outlier removal, smoothing, interpolation).
+3. Install dependencies:
+   - If you create a `requirements.txt`:
+     ```
+     pip install -r requirements.txt
+     ```
+   - Alternatively you can use `version_packages.txt` as a starting point:
+     ```
+     pip install -r version_packages.txt
+     ```
+
+4. Prepare data:
+   - Place your (small) FIT or TCX files in `fit_folder/`.
+   - Note: The code labels some TCX files as `.fit` — make sure the actual format is correct.
+
+5. Start the app:
+   ```
+   python dash_board.py
+   ```
+   - By default Dash runs with `debug=True` — change to `False` for production.
+
+Brief status of `dash_board.py`
+- Functional: the app produces comparison plots and a map.
+- Issues addressed in the refactor: removed hardcoded paths, added logging, modularized loading, added config via env var, and provided an app factory. Tests, further modularization and type annotations for functions in `functions/` are still recommended.
+
+Next steps
 - Fix city‑based filtering by improving bounding box expansion logic.
 - Implement VO₂max estimation and fitness age models.
 - Add dynamic comparison tools (distance‑aligned plots, smoothing options).
