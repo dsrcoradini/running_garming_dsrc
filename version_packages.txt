@@ -1,7 +1,0 @@
-Python -- version 3.13.4
-garminconnect -- version 3.3.1
-pandas -- version -- 2.3.3
-matplotlib.pyplot -- version 3.10.7
-numpy -- version 2.3.4
-scipy -- version 1.16.3
-searborn -- version 0.13.2
