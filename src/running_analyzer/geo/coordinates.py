@@ -9,15 +9,17 @@ bounding_boxes = {
         "Serra": {"lat_min": -20.15, "lat_max": -20.05, "lon_min": -40.30, "lon_max": -40.20},
         "Cariacica": {"lat_min": -20.30, "lat_max": -20.25, "lon_min": -40.45, "lon_max": -40.35}
     },
-    "Austria": {
-        "Leoben": {"lat_min": 47.34, "lat_max": 47.40, "lon_min": 15.05, "lon_max": 15.20},
-        "St. Michael": {"lat_min": 47.33, "lat_max": 47.37, "lon_min": 15.15, "lon_max": 15.25},
-        "Niklasdorf": {"lat_min": 47.37, "lat_max": 47.40, "lon_min": 15.15, "lon_max": 15.20},
-        "Öberraich": {"lat_min": 47.36, "lat_max": 47.38, "lon_min": 15.05, "lon_max": 15.10},
-        "Vienna": {"lat_min": 48.15, "lat_max": 48.30, "lon_min": 16.25, "lon_max": 16.45},
-        "Graz": {"lat_min": 47.05, "lat_max": 47.15, "lon_min": 15.35, "lon_max": 15.55},
-        "Linz": {"lat_min": 48.25, "lat_max": 48.35, "lon_min": 14.25, "lon_max": 14.35}
-    },
+"Austria": {
+    "Leoben": {"lat_min": 47.34, "lat_max": 47.40, "lon_min": 15.05, "lon_max": 15.20},
+    "St. Michael": {"lat_min": 47.33, "lat_max": 47.37, "lon_min": 15.15, "lon_max": 15.25},
+    "Niklasdorf": {"lat_min": 47.37, "lat_max": 47.40, "lon_min": 15.15, "lon_max": 15.20},
+    "Öberraich": {"lat_min": 47.36, "lat_max": 47.38, "lon_min": 15.05, "lon_max": 15.10},
+    "Vienna": {"lat_min": 48.15, "lat_max": 48.30, "lon_min": 16.25, "lon_max": 16.45},
+    "Graz": {"lat_min": 47.05, "lat_max": 47.15, "lon_min": 15.35, "lon_max": 15.55},
+    "Linz": {"lat_min": 48.25, "lat_max": 48.35, "lon_min": 14.25, "lon_max": 14.35},
+    "Braunau am Inn": {"lat_min": 48.24,"lat_max": 48.27,"lon_min": 13.03,"lon_max": 13.06}
+}
+,
     "Greece": {
         "Athens": {"lat_min": 37.95, "lat_max": 38.05, "lon_min": 23.65, "lon_max": 23.75},
         "San Torino": {"lat_min": 36.40, "lat_max": 36.45, "lon_min": 25.40, "lon_max": 25.45}
