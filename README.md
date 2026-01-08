@@ -6,27 +6,31 @@ This script retrieves FIT data from Garmin and downloads it to your computer or 
 You must provide your email and password, but credentials are not stored.  
 The API supports downloading up to 1000 activities. A potential improvement would be to define a date window for more precise filtering.
 
-**CSV Converter – convert_fit_to_csv**  
-Located in the fit_file folder.  
-This script converts FIT files to CSV format. The current version focuses on a few metrics (time, heart rate, distance).  
-Depending on your watch or gadgets, you can modify the code to extract additional metrics if needed.
+**dash_board**  
+Data Pipeline: All processing now happens directly from the TCX files.
+There is no need to convert anything to CSV anymore — the dashboard loads, parses, and analyzes the raw TCX data on the fly.
+Although the files carry a .fit extension, they are actually TCX XML files, so FIT parsing libraries are not required.
 
-**Analyser – analyser.py** --> Is not being used might be discontinued  
-Currently, the analyser groups runs into specific categories.  
-Future work will explore more innovative approaches for deeper data analysis.
+Metrics & Device Considerations: Some metrics (e.g., power, ground contact time, vertical oscillation) are not present in TCX files and would require true FIT files or a device that records these fields.
+Cadence, elevation, and temperature may be available depending on the device model.
+Garmin Forerunner 255 uses Smart Recording, meaning data points are captured only when movement changes significantly.
+This results in irregular sampling intervals, which affects smoothing, pace calculations, and dynamic plots.
 
-**Mapping & HRV – map_test.py
-Located in the map_test folder.
-This script merges multiple CSV runs and filters them using bounding boxes defined in a separate coordinates.py file.
-- Bounding boxes are stored per city/country, allowing flexible filtering of runs by location.
-- A tolerance expansion method is implemented: if a run slightly exceeds the bounding box, the box expands within a defined threshold.
-- Runs can be filtered across multiple cities by combining bounding boxes.
-- Visualizations are generated with Plotly (scatter_mapbox), showing each run with a distinct color.
-Additionally, the script computes Heart Rate Variability (HRV) metrics directly from the CSV data:
-- hrv_rolling: rolling standard deviation of heart rate (hr_bpm).
-- hrv_rmssd: Root Mean Square of Successive Differences (RMSSD), a standard HRV measure.
-- hrv_diff: raw beat‑to‑beat differences for inspection.
-These metrics are added as new columns to each run DataFrame, enabling deeper physiological analysis alongside geospatial visualization.
+Data Quality: Data cleaning is still necessary. Outliers in heart rate, GPS, or distance can distort HRV, pace, and other derived metrics. A robust cleaning pipeline (filters, smoothing, interpolation) will be needed.
 
-
+Current Limitations
+- City selection: The geographic filtering works only for some files.
+Likely due to bounding box mismatches or missing GPS points in certain TCX files.
+- Dynamic diagrams: Multi‑run comparison plots need refinement, especially with irregular sampling.
+- Advanced metrics:
+- VO₂max estimation is not implemented yet.
+- Fitness age calculation is pending.
+- Running dynamics (GCT, VO, power) require real FIT files.
+Next Steps
+- Improve TCX parsing to support more optional fields (cadence, elevation, temperature).
+- Add a data‑cleaning module (outlier removal, smoothing, interpolation).
+- Fix city‑based filtering by improving bounding box expansion logic.
+- Implement VO₂max estimation and fitness age models.
+- Add dynamic comparison tools (distance‑aligned plots, smoothing options).
+- Optional: Add support for true FIT files in the future
 

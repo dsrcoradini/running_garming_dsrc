@@ -29,7 +29,7 @@ from functions import (
 # -------------------------------------------------------------------
 # LOAD RUNS FROM FIT FILES
 # -------------------------------------------------------------------
-fit_folder = Path(r"C:\Users\diego\project1\fit_file")
+fit_folder = Path(r"C:\Users\diego\project1\fit_folder")
 fit_files = list(fit_folder.glob("*.fit"))  # your files are TCX disguised as .fit
 
 runs = []
