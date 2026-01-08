@@ -29,6 +29,7 @@ from functions import (
     bounding_boxes,
     parse_tcx,
 )
+from helpers import format_run_name, format_pace, format_distance, format_duration
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -63,14 +64,16 @@ def load_all_runs(fit_folder: Path) -> List[Dict[str, object]]:
                 continue
 
             df = df.copy()
-            df["run_name"] = file_path.stem
+            # Format run name to be more readable
+            readable_name = format_run_name(file_path.stem)
+            df["run_name"] = readable_name
             # safe parse timestamp
             if "timestamp" in df.columns:
                 df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
             else:
                 df["timestamp"] = pd.NaT
 
-            runs.append({"name": df["run_name"].iloc[0], "df": df})
+            runs.append({"name": readable_name, "df": df})
 
     logger.info("Loaded %d runs", len(runs))
     return runs
@@ -236,13 +239,9 @@ def create_app(runs: List[Dict[str, object]]):
                 html.Div(
                     [
                         html.H4(r["name"]),
-                        html.P(f"Distance: {stats.get('distance_km', float('nan')):.2f} km"),
-                        html.P(f"Avg HR: {stats.get('avg_hr', float('nan')):.1f} bpm"),
-                        html.P(
-                            f"Pace: {stats.get('avg_pace', float('nan')) / 60:.2f} min/km"
-                            if not np.isnan(stats.get("avg_pace", float("nan")))
-                            else "Pace: n/a"
-                        ),
+                        html.P(f"Distance: {format_distance(stats.get('distance_km', 0) * 1000)}"),
+                        html.P(f"Avg HR: {stats.get('avg_hr', 0):.1f} bpm"),
+                        html.P(f"Pace: {format_pace(stats.get('avg_pace', 0))}"),
                     ],
                     style={"padding": "10px", "border": "1px solid #ccc", "margin": "5px", "width": "220px"},
                 )

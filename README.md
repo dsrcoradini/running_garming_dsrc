@@ -2,95 +2,160 @@
 
 Visualize Garmin/FIT and TCX running data with an interactive Dash dashboard. Compare runs, analyze metrics, and view routes on maps.
 
-## Features
+## ✨ Features
 
-- Interactive dashboard with comparison plots
-- Map visualization of running routes
-- Metrics: HRV, pace, cadence, elevation, temperature, running dynamics
-- Location filtering by country/city
-- Garmin Connect API integration for downloading activities
-- Supports FIT and TCX file formats
+- 📊 Interactive dashboard with comparison plots
+- 🗺️ Map visualization of running routes
+- 💓 Metrics: HRV, pace, cadence, elevation, temperature
+- 🏃 Running dynamics: ground contact time, vertical oscillation, power
+- 🌍 Location filtering by country/city
+- 📥 Garmin Connect API integration
+- 📁 Supports FIT and TCX file formats
 
-## Installation
+## 🚀 Quick Start
+
+### Installation
 
 ```bash
+# Clone repository
 git clone https://github.com/dsrcoradini/running_garming_dsrc.git
 cd running_garming_dsrc
 
-python -m venv .venv
-source .venv/bin/activate  # Linux/macOS
+# Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # macOS/Linux
 # .venv\Scripts\activate  # Windows
 
+# Install dependencies
 pip install -r requirements.txt
 
-# For Garmin Connect downloads (optional)
-pip install garminconnect
+# Optional: Install as package
+pip install -e .
 ```
 
-## Usage
+## 📖 Usage
 
-### Prepare Data
+### 1. Prepare Data
 
-**Option 1: Download from Garmin Connect**
+**Option A: Download from Garmin Connect**
 ```bash
-python api_call_fit_file.py
+python scripts/download_garmin.py
+# Or use environment variables:
+export GARMIN_EMAIL="your_email@example.com"
+export GARMIN_PASSWORD="your_password"
+python scripts/download_garmin.py
 ```
-Set `EMAIL` and `PASSWORD` environment variables or enter when prompted.
 
-**Option 2: Manual**
-Place FIT/TCX files in `fit_folder/`
+**Option B: Manual Upload**
+Place FIT/TCX files in `data/fit_files/` directory
 
-### Run Dashboard
+### 2. Run Dashboard
 
 ```bash
-python dash_board.py
+# Simple way
+python run.py
+
+# Or if installed as package
+running-analyzer
+
+# With custom data folder
+export RUN_FIT_FOLDER=/path/to/your/fit/files
+python run.py
 ```
 
 Open `http://127.0.0.1:8050` in your browser.
 
-### Configuration
+### 3. Configuration (Optional)
 
-Set custom FIT folder location:
+Copy `.env.example` to `.env` and configure:
 ```bash
-export RUN_FIT_FOLDER=/path/to/fit/files
+cp .env.example .env
+# Edit .env with your settings
 ```
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-├── dash_board.py           # Main Dash app
-├── api_call_fit_file.py    # Garmin Connect API
-├── fit_folder/            # Place FIT/TCX files here
-├── functions/
-│   ├── functions.py       # Parsing and metrics
-│   └── coordinates.py     # City bounding boxes
-└── map_data/
-    └── map_data_function.py
+running_garming_dsrc/
+├── src/
+│   └── running_analyzer/          # Main package
+│       ├── __init__.py
+│       ├── app.py                 # Dash application
+│       ├── parsers/               # FIT/TCX parsers
+│       │   ├── __init__.py
+│       │   └── fit_parser.py
+│       ├── metrics/               # Metrics calculations
+│       │   ├── __init__.py
+│       │   └── calculations.py
+│       ├── geo/                   # Geographic filtering
+│       │   ├── __init__.py
+│       │   ├── coordinates.py
+│       │   └── filters.py
+│       └── utils/                 # Helper functions
+│           ├── __init__.py
+│           └── helpers.py
+├── scripts/
+│   └── download_garmin.py         # Garmin Connect downloader
+├── data/
+│   └── fit_files/                 # FIT/TCX data files
+├── tests/                         # Unit tests
+│   ├── __init__.py
+│   └── test_helpers.py
+├── run.py                         # Entry point
+├── setup.py                       # Package configuration
+├── requirements.txt               # Dependencies
+├── .env.example                   # Configuration template
+├── .gitignore
+├── README.md
+└── LICENSE
 ```
 
-## Requirements
+## 🧪 Running Tests
+
+```bash
+# Run tests
+python -m pytest tests/
+
+# Or run individual test file
+python tests/test_helpers.py
+```
+
+## 📋 Requirements
 
 - Python 3.9+
-- See `requirements.txt` for dependencies
+- See `requirements.txt` for all dependencies
+- Optional: `garminconnect` for API downloads
 
-## Status
+## ✅ Status
 
-**Working:**
-- Dash app with plots and maps
-- FIT/TCX parsing
-- Multiple metrics visualization
-- City filtering
-- Garmin Connect integration
+**Implemented:**
+- ✅ Interactive Dash dashboard
+- ✅ FIT/TCX file parsing
+- ✅ Multiple metrics visualization
+- ✅ Geographic filtering by city
+- ✅ Garmin Connect integration
+- ✅ Running dynamics metrics
+- ✅ Modular code structure
+- ✅ Helper functions
+- ✅ Basic unit tests
 
 **Known Issues:**
-- City filtering bounding box logic needs improvement
+- City filtering bounding box logic could be improved
 - TCX files may be mislabeled as `.fit`
-- Debug mode enabled by default
 
-## Future
+## 🔮 Future Enhancements
 
-- Improve city filtering logic
-- VO₂max estimation
-- Distance-aligned plots
-- True FIT file parsing
-- Unit tests
+- [ ] VO₂max estimation
+- [ ] Distance-aligned plots
+- [ ] More comprehensive unit tests
+- [ ] Export data to CSV/JSON
+- [ ] Training load analysis
+- [ ] Performance trends over time
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
