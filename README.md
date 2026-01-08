@@ -1,56 +1,98 @@
+# Running Garmin Data Visualization
 
-Short purpose
-- A personal project to visualize Garmin/FIT (or TCX) running data as an interactive Dash app.
+Visualize Garmin/FIT and TCX running data with an interactive Dash dashboard. Compare runs, analyze metrics, and view routes on maps.
 
-What's in the repo
-- `dash_board.py` — the Dash app.
-- `api_call_fit_file.py` — helper functions for FIT/TCX handling (see files).
-- `version_packages.txt` — currently listed package versions.
-- Folders: `fit_folder`, `map_data`, `functions` (placeholders / helper functions expected).
+## Features
 
-Quickstart (recommended)
-1. Clone the repo:
-   ```
-   git clone https://github.com/dsrcoradini/running_garming_dsrc.git
-   cd running_garming_dsrc
-   ```
+- Interactive dashboard with comparison plots
+- Map visualization of running routes
+- Metrics: HRV, pace, cadence, elevation, temperature, running dynamics
+- Location filtering by country/city
+- Garmin Connect API integration for downloading activities
+- Supports FIT and TCX file formats
 
-2. Python environment:
-   - Python 3.9+ recommended (check your dependencies).
-   - Create a virtual environment:
-     ```
-     python -m venv .venv
-     source .venv/bin/activate   # Linux / macOS
-     .venv\Scripts\activate      # Windows
-     ```
+## Installation
 
-3. Install dependencies:
-   - If you create a `requirements.txt`:
-     ```
-     pip install -r requirements.txt
-     ```
-   - Alternatively you can use `version_packages.txt` as a starting point:
-     ```
-     pip install -r version_packages.txt
-     ```
+```bash
+git clone https://github.com/dsrcoradini/running_garming_dsrc.git
+cd running_garming_dsrc
 
-4. Prepare data:
-   - Place your (small) FIT or TCX files in `fit_folder/`.
-   - Note: The code labels some TCX files as `.fit` — make sure the actual format is correct.
+python -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate  # Windows
 
-5. Start the app:
-   ```
-   python dash_board.py
-   ```
-   - By default Dash runs with `debug=True` — change to `False` for production.
+pip install -r requirements.txt
+```
 
-Brief status of `dash_board.py`
-- Functional: the app produces comparison plots and a map.
-- Issues addressed in the refactor: removed hardcoded paths, added logging, modularized loading, added config via env var, and provided an app factory. Tests, further modularization and type annotations for functions in `functions/` are still recommended.
+For Garmin Connect downloads:
+```bash
+pip install garminconnect
+```
 
-Next steps
-- Fix city‑based filtering by improving bounding box expansion logic.
-- Implement VO₂max estimation and fitness age models.
-- Add dynamic comparison tools (distance‑aligned plots, smoothing options).
-- Optional: Add support for true FIT files in the future
+## Usage
 
+### Prepare Data
+
+**Option 1: Download from Garmin Connect**
+```bash
+python api_call_fit_file.py
+```
+Set `EMAIL` and `PASSWORD` environment variables or enter when prompted.
+
+**Option 2: Manual**
+Place FIT/TCX files in `fit_folder/`
+
+### Run Dashboard
+
+```bash
+python dash_board.py
+```
+
+Open `http://127.0.0.1:8050` in your browser.
+
+### Configuration
+
+Set custom FIT folder location:
+```bash
+export RUN_FIT_FOLDER=/path/to/fit/files
+```
+
+## Project Structure
+
+```
+├── dash_board.py           # Main Dash app
+├── api_call_fit_file.py    # Garmin Connect API
+├── fit_folder/            # Place FIT/TCX files here
+├── functions/
+│   ├── functions.py       # Parsing and metrics
+│   └── coordinates.py     # City bounding boxes
+└── map_data/
+    └── map_data_function.py
+```
+
+## Requirements
+
+- Python 3.9+
+- See `requirements.txt` for dependencies
+
+## Status
+
+**Working:**
+- Dash app with plots and maps
+- FIT/TCX parsing
+- Multiple metrics visualization
+- City filtering
+- Garmin Connect integration
+
+**Known Issues:**
+- City filtering bounding box logic needs improvement
+- TCX files may be mislabeled as `.fit`
+- Debug mode enabled by default
+
+## Future
+
+- Improve city filtering logic
+- VO₂max estimation
+- Distance-aligned plots
+- True FIT file parsing
+- Unit tests
