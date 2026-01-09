@@ -70,3 +70,15 @@ def filter_runs_by_city(runs, city, country_boxes):
             filtered_runs.append({"name": run["name"], "df": df_filtered})
 
     return filtered_runs
+
+def assign_geo_to_runs(runs):
+    for r in runs:
+        df = r["df"]
+        lat = df["latitude"].iloc[0]
+        lon = df["longitude"].iloc[0]
+
+        country = get_country(lat, lon)
+        city = detect_or_create_city(lat, lon, country)
+
+        r["country"] = country
+        r["city"] = city

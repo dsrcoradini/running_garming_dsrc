@@ -29,6 +29,12 @@ from running_analyzer.parsers import parse_tcx
 from running_analyzer.metrics import add_hrv_metrics, add_pace_metrics, compute_run_stats
 from running_analyzer.geo import bounding_boxes, filter_runs_by_city
 from running_analyzer.utils import format_run_name, format_pace, format_distance
+from running_analyzer.geo.detectors import detect_or_create_city
+from running_analyzer.geo.country_finder import get_country
+from running_analyzer.geo.cache import load_auto_cities
+
+
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -100,22 +106,37 @@ def empty_line_fig(title: str = "No data available"):
 
 def create_layout(runs: List[Dict[str, object]]):
     """Create Dash application layout."""
+
+    # Build country list dynamically from detected runs
+    detected_countries = sorted({r["country"] for r in runs})
+
     return html.Div(
         [
             html.H1("Interactive Run Explorer (FIT + Running Dynamics)"),
+
+            # Country dropdown (dynamic)
             dcc.Dropdown(
                 id="country-dropdown",
-                options=[{"label": c, "value": c} for c in bounding_boxes.keys()],
-                value=list(bounding_boxes.keys())[0] if bounding_boxes else None,
+                options=[{"label": c, "value": c} for c in detected_countries],
+                value=detected_countries[0] if detected_countries else None,
                 clearable=False,
             ),
-            dcc.Dropdown(id="city-dropdown", clearable=False, placeholder="Select a city"),
+
+            # City dropdown (dynamic)
+            dcc.Dropdown(
+                id="city-dropdown",
+                clearable=False,
+                placeholder="Select a city",
+            ),
+
+            # Run selector
             dcc.Dropdown(
                 id="run-dropdown",
                 options=[{"label": r["name"], "value": r["name"]} for r in runs],
                 multi=True,
                 placeholder="Select runs to compare",
             ),
+
             dcc.Tabs(
                 id="metric-tabs",
                 value="hrv",
@@ -130,6 +151,7 @@ def create_layout(runs: List[Dict[str, object]]):
                     dcc.Tab(label="Power", value="power"),
                 ],
             ),
+
             html.Div(
                 [
                     html.Label("HRV method:"),
@@ -144,6 +166,7 @@ def create_layout(runs: List[Dict[str, object]]):
                     ),
                 ]
             ),
+
             html.Div(
                 [
                     html.Label("HRV window size:"),
@@ -157,6 +180,7 @@ def create_layout(runs: List[Dict[str, object]]):
                     ),
                 ]
             ),
+
             html.Hr(),
             html.Div(id="summary-stats", style={"display": "flex", "flex-wrap": "wrap"}),
             dcc.Graph(id="comparison-graph"),
@@ -164,24 +188,29 @@ def create_layout(runs: List[Dict[str, object]]):
         ]
     )
 
-
 def create_app(runs: List[Dict[str, object]]):
     """Create and configure Dash app."""
     app = dash.Dash(__name__)
     app.layout = create_layout(runs)
 
+    # --- UPDATED CITY DROPDOWN CALLBACK ---
     @app.callback(
         [Output("city-dropdown", "options"), Output("city-dropdown", "value")],
         Input("country-dropdown", "value"),
     )
     def update_city_dropdown(selected_country: Optional[str]):
-        if not selected_country or selected_country not in bounding_boxes:
+        if not selected_country:
             return [], None
-        cities = list(bounding_boxes[selected_country].keys())
+
+        # Build city list dynamically from detected runs
+        cities = sorted({r["city"] for r in runs if r["country"] == selected_country})
+
         if not cities:
             return [], None
+
         return [{"label": c, "value": c} for c in cities], cities[0]
 
+    # --- YOUR EXISTING GRAPH CALLBACK REMAINS UNCHANGED ---
     @app.callback(
         [
             Output("map-graph", "figure"),
@@ -197,13 +226,17 @@ def create_app(runs: List[Dict[str, object]]):
             Input("window-slider", "value"),
         ],
     )
+
     def update_graphs(country, city, selected_runs, metric, method, window):
+        # If no city is selected, return empty figures
         if city is None:
             return empty_map_fig(), empty_line_fig(), []
 
-        # Filter runs by city using provided bounding boxes
-        country_boxes = bounding_boxes.get(country, {})
-        filtered_runs = filter_runs_by_city(runs, city, country_boxes)
+        # Filter runs by detected country + city
+        filtered_runs = [
+            r for r in runs
+            if r.get("country") == country and r.get("city") == city
+        ]
 
         # Filter by selected runs (if the user selected any)
         if selected_runs:
@@ -218,7 +251,7 @@ def create_app(runs: List[Dict[str, object]]):
         for r in filtered_runs:
             df = r["df"].copy()
 
-            # add HRV & pace metrics (functions are expected to handle NaN/short signals)
+            # Add HRV & pace metrics
             try:
                 df = add_hrv_metrics(df, window=window, method=method)
             except Exception:
@@ -237,8 +270,13 @@ def create_app(runs: List[Dict[str, object]]):
                 stats = compute_run_stats(df)
             except Exception:
                 logger.exception("compute_run_stats failed for %s", r["name"])
-                stats = {"distance_km": float("nan"), "avg_hr": float("nan"), "avg_pace": float("nan")}
+                stats = {
+                    "distance_km": float("nan"),
+                    "avg_hr": float("nan"),
+                    "avg_pace": float("nan")
+                }
 
+            # Stats card
             stats_cards.append(
                 html.Div(
                     [
@@ -247,12 +285,18 @@ def create_app(runs: List[Dict[str, object]]):
                         html.P(f"Avg HR: {stats.get('avg_hr', 0):.1f} bpm"),
                         html.P(f"Pace: {format_pace(stats.get('avg_pace', 0))}"),
                     ],
-                    style={"padding": "10px", "border": "1px solid #ccc", "margin": "5px", "width": "220px"},
+                    style={
+                        "padding": "10px",
+                        "border": "1px solid #ccc",
+                        "margin": "5px",
+                        "width": "220px",
+                    },
                 )
             )
 
             aligned.append(df)
 
+        # Combine all runs
         df_all = pd.concat(aligned, ignore_index=True)
 
         # Build comparison figure depending on selected metric
@@ -261,39 +305,28 @@ def create_app(runs: List[Dict[str, object]]):
         elif metric == "pace":
             fig = px.line(df_all, x="t", y="pace_min_per_km", color="run_name", title="Pace (min/km) Comparison")
         elif metric == "cadence":
-            if "cadence_spm" in df_all.columns:
-                fig = px.line(df_all, x="t", y="cadence_spm", color="run_name", title="Cadence (spm) Comparison")
-            else:
-                fig = empty_line_fig("Cadence data not available")
+            fig = px.line(df_all, x="t", y="cadence_spm", color="run_name", title="Cadence (spm) Comparison") \
+                if "cadence_spm" in df_all.columns else empty_line_fig("Cadence data not available")
         elif metric == "elevation":
-            if "elevation_m" in df_all.columns:
-                fig = px.line(df_all, x="t", y="elevation_m", color="run_name", title="Elevation (m) Comparison")
-            else:
-                fig = empty_line_fig("Elevation data not available")
+            fig = px.line(df_all, x="t", y="elevation_m", color="run_name", title="Elevation (m) Comparison") \
+                if "elevation_m" in df_all.columns else empty_line_fig("Elevation data not available")
         elif metric == "temperature":
-            if "temperature_c" in df_all.columns:
-                fig = px.line(df_all, x="t", y="temperature_c", color="run_name", title="Temperature (°C) Comparison")
-            else:
-                fig = empty_line_fig("Temperature data not available")
+            fig = px.line(df_all, x="t", y="temperature_c", color="run_name", title="Temperature (°C) Comparison") \
+                if "temperature_c" in df_all.columns else empty_line_fig("Temperature data not available")
         elif metric == "gct":
-            if "ground_contact_time_ms" in df_all.columns:
-                fig = px.line(df_all, x="t", y="ground_contact_time_ms", color="run_name", title="Ground Contact Time (ms) Comparison")
-            else:
-                fig = empty_line_fig("Ground contact time data not available")
+            fig = px.line(df_all, x="t", y="ground_contact_time_ms", color="run_name", title="Ground Contact Time (ms) Comparison") \
+                if "ground_contact_time_ms" in df_all.columns else empty_line_fig("Ground contact time data not available")
         elif metric == "vo":
-            if "vertical_osc_mm" in df_all.columns:
-                fig = px.line(df_all, x="t", y="vertical_osc_mm", color="run_name", title="Vertical Oscillation (mm) Comparison")
-            else:
-                fig = empty_line_fig("Vertical oscillation data not available")
+            fig = px.line(df_all, x="t", y="vertical_osc_mm", color="run_name", title="Vertical Oscillation (mm) Comparison") \
+                if "vertical_osc_mm" in df_all.columns else empty_line_fig("Vertical oscillation data not available")
         elif metric == "power":
-            if "power_w" in df_all.columns:
-                fig = px.line(df_all, x="t", y="power_w", color="run_name", title="Running Power (W) Comparison")
-            else:
-                fig = empty_line_fig("Power data not available")
+            fig = px.line(df_all, x="t", y="power_w", color="run_name", title="Running Power (W) Comparison") \
+                if "power_w" in df_all.columns else empty_line_fig("Power data not available")
         else:
             fig = empty_line_fig()
 
-        # Map figure (requires latitude & longitude columns)
+        # Map figure
+
         if {"latitude", "longitude"}.issubset(df_all.columns):
             map_fig = px.scatter_mapbox(
                 df_all,
@@ -307,6 +340,7 @@ def create_app(runs: List[Dict[str, object]]):
             map_fig = empty_map_fig()
 
         return map_fig, fig, stats_cards
+
 
     return app
 
